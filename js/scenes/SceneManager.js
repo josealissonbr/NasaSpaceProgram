@@ -15,6 +15,12 @@ export class SceneManager {
             space: null
         };
         
+        // Armazenar elementos DOM
+        this.domElements = {
+            builderCanvas: document.getElementById('builder-canvas'),
+            simulationCanvas: document.getElementById('simulation-canvas')
+        };
+        
         // Inicializar o renderer
         this.initRenderer();
         
@@ -23,149 +29,292 @@ export class SceneManager {
         
         // Ajustar ao tamanho da janela
         this.onWindowResize();
+        
+        // Definir estado inicial como não renderizando
+        this.isRendering = false;
+        
+        // Adicionar evento de redimensionamento
+        window.addEventListener('resize', () => this.onWindowResize());
     }
     
     initRenderer() {
-        // Criar o renderer Three.js
-        this.renderer = new THREE.WebGLRenderer({ antialias: true });
-        this.renderer.setPixelRatio(window.devicePixelRatio);
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.renderer.shadowMap.enabled = true;
-        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        this.renderer.outputEncoding = THREE.sRGBEncoding;
-        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = 1.0;
+        try {
+            // Criar o renderer Three.js
+            this.renderer = new THREE.WebGLRenderer({ 
+                antialias: true,
+                alpha: true
+            });
+            this.renderer.setPixelRatio(window.devicePixelRatio);
+            this.renderer.setSize(window.innerWidth, window.innerHeight);
+            this.renderer.shadowMap.enabled = true;
+            this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            
+            console.log('Renderer Three.js inicializado com sucesso');
+        } catch (error) {
+            console.error('Erro ao inicializar renderer Three.js:', error);
+        }
     }
     
     createScenes() {
-        // Inicializar cenas
-        this.scenes.builder = new RocketBuilderScene(this.gameState, this.assetLoader);
-        this.scenes.launch = new LaunchScene(this.gameState, this.assetLoader);
-        this.scenes.space = new SpaceScene(this.gameState, this.assetLoader);
-        
-        // Adicionar elementos do renderer às cenas
-        this.attachRenderer();
+        try {
+            // Inicializar cenas
+            this.scenes.builder = new RocketBuilderScene(this.gameState, this.assetLoader);
+            this.scenes.launch = new LaunchScene(this.gameState, this.assetLoader);
+            this.scenes.space = new SpaceScene(this.gameState, this.assetLoader);
+            
+            console.log('Cenas criadas com sucesso');
+            
+            // Adicionar elementos do renderer às cenas
+            this.attachRenderer();
+        } catch (error) {
+            console.error('Erro ao criar cenas:', error);
+        }
     }
     
     attachRenderer() {
-        // Adicionar canvas do rocket builder à DOM
-        const builderCanvas = document.getElementById('builder-canvas');
-        if (builderCanvas) {
-            builderCanvas.appendChild(this.renderer.domElement.cloneNode(true));
+        if (!this.renderer) {
+            console.error('Renderer não inicializado');
+            return;
         }
         
-        // Adicionar canvas da simulação de lançamento à DOM
-        const simulationCanvas = document.getElementById('simulation-canvas');
-        if (simulationCanvas) {
-            simulationCanvas.appendChild(this.renderer.domElement.cloneNode(true));
+        try {
+            // Limpar canvas existentes
+            if (this.domElements.builderCanvas) {
+                while (this.domElements.builderCanvas.firstChild) {
+                    this.domElements.builderCanvas.removeChild(this.domElements.builderCanvas.firstChild);
+                }
+                this.domElements.builderCanvas.appendChild(this.renderer.domElement);
+            } else {
+                console.error('Elemento DOM para construtor de foguete não encontrado');
+            }
+            
+            console.log('Renderer anexado aos elementos DOM');
+        } catch (error) {
+            console.error('Erro ao anexar renderer:', error);
         }
     }
     
     getCurrentScene() {
         // Retornar a cena apropriada baseada no estado atual do jogo
+        if (!this.gameState) {
+            console.error('GameState não inicializado');
+            return null;
+        }
+        
         const state = this.gameState.currentState;
         
         if (state === this.gameState.STATES.ROCKET_BUILDER) {
             return this.scenes.builder;
-        } else if (state === this.gameState.STATES.LAUNCH_SIMULATION || 
-                  state === this.gameState.STATES.SPACE_EXPLORATION) {
-            return this.isInSpace() ? this.scenes.space : this.scenes.launch;
+        } else if (state === this.gameState.STATES.LAUNCH_SIMULATION) {
+            return this.scenes.launch;
+        } else if (state === this.gameState.STATES.SPACE_EXPLORATION) {
+            return this.scenes.space;
         }
         
         return null;
     }
     
-    isInSpace() {
-        // Verificar se o foguete atingiu o espaço
-        return this.gameState.flight.reachedSpace;
-    }
-    
     update(deltaTime) {
+        if (!this.renderer) {
+            console.error('Renderer não inicializado');
+            return;
+        }
+        
         const currentScene = this.getCurrentScene();
         
         if (!currentScene) {
             return;
         }
         
-        // Atualizar a cena atual
-        currentScene.update(deltaTime);
-        
-        // Renderizar a cena
-        this.renderer.render(currentScene.scene, currentScene.camera);
-        
-        // Verificar transição para o espaço
-        if (this.gameState.isState(this.gameState.STATES.LAUNCH_SIMULATION) && 
-            this.gameState.checkSpaceReached(this.gameState.flight.altitude)) {
-            this.transitionToSpace();
+        try {
+            // Atualizar a cena atual
+            if (typeof currentScene.update === 'function') {
+                currentScene.update(deltaTime);
+            }
+            
+            // Renderizar a cena
+            if (currentScene.scene && currentScene.camera) {
+                this.renderer.render(currentScene.scene, currentScene.camera);
+            } else {
+                console.warn('Cena ou câmera não definidas para renderização');
+            }
+            
+            // Verificar transição para o espaço
+            if (this.gameState.isState && 
+                this.gameState.isState(this.gameState.STATES.LAUNCH_SIMULATION) && 
+                this.gameState.checkSpaceReached && 
+                this.gameState.checkSpaceReached(this.gameState.flight.altitude)) {
+                this.transitionToSpace();
+            }
+        } catch (error) {
+            console.error('Erro ao atualizar/renderizar cena:', error);
         }
     }
     
+    startRendering() {
+        if (this.isRendering) {
+            return;
+        }
+        
+        this.isRendering = true;
+        this.renderer.setAnimationLoop(() => this.update());
+        console.log('Loop de renderização iniciado');
+    }
+    
+    stopRendering() {
+        this.isRendering = false;
+        this.renderer.setAnimationLoop(null);
+        console.log('Loop de renderização parado');
+    }
+    
     transitionToSpace() {
+        if (!this.scenes.launch || !this.scenes.space) {
+            console.error('Cenas necessárias não inicializadas');
+            return;
+        }
+        
         // Transição do estado do jogo
         this.gameState.setState(this.gameState.STATES.SPACE_EXPLORATION);
         
-        // Transferir dados do foguete da cena de lançamento para a cena espacial
-        const rocketData = this.scenes.launch.getRocketData();
-        this.scenes.space.setRocketData(rocketData);
-        
-        // Inicializar a cena espacial
-        this.scenes.space.initializeSpace();
+        try {
+            // Transferir dados do foguete da cena de lançamento para a cena espacial
+            const rocketData = this.scenes.launch.getRocketData();
+            this.scenes.space.setRocketData(rocketData);
+            
+            // Inicializar a cena espacial
+            this.scenes.space.initializeSpace();
+            
+            console.log('Transição para o espaço concluída');
+        } catch (error) {
+            console.error('Erro durante transição para o espaço:', error);
+        }
     }
     
     onWindowResize() {
+        if (!this.renderer) {
+            return;
+        }
+        
+        // Obter dimensões da janela
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        
         // Atualizar tamanho do renderer
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setSize(width, height);
         
         // Atualizar dimensões das câmeras em todas as cenas
         for (const sceneName in this.scenes) {
             const scene = this.scenes[sceneName];
-            if (scene && scene.camera) {
+            if (scene && typeof scene.onWindowResize === 'function') {
+                scene.onWindowResize(width, height);
+            } else if (scene && scene.camera) {
                 if (scene.camera instanceof THREE.PerspectiveCamera) {
-                    scene.camera.aspect = window.innerWidth / window.innerHeight;
+                    scene.camera.aspect = width / height;
                     scene.camera.updateProjectionMatrix();
                 }
             }
         }
+        
+        console.log('Dimensões da janela atualizadas:', width, height);
     }
     
     // Métodos para as diferentes cenas
     
     // Construtor de foguetes
     showRocketBuilder() {
-        this.scenes.builder.setupBuilder();
-        this.renderer.setAnimationLoop(() => this.update());
+        // Verificar se a cena do construtor de foguetes existe
+        if (!this.scenes || !this.scenes.builder) {
+            console.error('Cena do construtor de foguetes não encontrada');
+            return;
+        }
+        
+        try {
+            // Parar qualquer renderização anterior
+            this.stopRendering();
+            
+            // Configurar cena
+            this.scenes.builder.setupBuilder();
+            
+            // Anexar renderer novamente
+            this.attachRenderer();
+            
+            // Iniciar renderização
+            this.startRendering();
+            
+            console.log('Cena de construção de foguete inicializada');
+        } catch (error) {
+            console.error('Erro ao mostrar construtor de foguetes:', error);
+        }
     }
     
     // Simulação de lançamento
     startLaunchSimulation() {
-        // Transferir dados do foguete para cena de lançamento
-        const rocketConfig = this.scenes.builder.getRocketConfiguration();
-        this.scenes.launch.setupLaunch(rocketConfig);
+        if (!this.scenes || !this.scenes.launch || !this.scenes.builder) {
+            console.error('Cenas necessárias não encontradas');
+            return;
+        }
         
-        // Atualizar estado do jogo
-        this.gameState.resetFlight();
-        
-        // Iniciar a simulação
-        this.renderer.setAnimationLoop(() => this.update());
+        try {
+            // Parar qualquer renderização anterior
+            this.stopRendering();
+            
+            // Transferir dados do foguete para cena de lançamento
+            const rocketConfig = this.scenes.builder.getRocketConfiguration();
+            this.scenes.launch.setupLaunch(rocketConfig);
+            
+            // Atualizar estado do jogo
+            if (this.gameState.resetFlight) {
+                this.gameState.resetFlight();
+            }
+            
+            // Anexar renderer novamente
+            this.attachRenderer();
+            
+            // Iniciar renderização
+            this.startRendering();
+            
+            console.log('Simulação de lançamento iniciada');
+        } catch (error) {
+            console.error('Erro ao iniciar simulação de lançamento:', error);
+        }
     }
     
     // Abortar lançamento
     abortLaunch() {
-        this.scenes.launch.abortLaunch();
-        this.gameState.flight.status = 'aborted';
+        if (!this.scenes || !this.scenes.launch) {
+            console.error('Cena de lançamento não encontrada');
+            return;
+        }
+        
+        try {
+            this.scenes.launch.abortLaunch();
+            this.gameState.flight.status = 'aborted';
+            console.log('Lançamento abortado');
+        } catch (error) {
+            console.error('Erro ao abortar lançamento:', error);
+        }
     }
     
     // Limpar todas as cenas
     dispose() {
         // Parar o loop de animação
-        this.renderer.setAnimationLoop(null);
+        this.stopRendering();
         
         // Limpar cenas
         for (const sceneName in this.scenes) {
             const scene = this.scenes[sceneName];
             if (scene && typeof scene.dispose === 'function') {
-                scene.dispose();
+                try {
+                    scene.dispose();
+                } catch (error) {
+                    console.error(`Erro ao dispor cena ${sceneName}:`, error);
+                }
             }
         }
+        
+        // Remover eventos
+        window.removeEventListener('resize', this.onWindowResize);
+        
+        console.log('Recursos do SceneManager liberados');
     }
 } 
