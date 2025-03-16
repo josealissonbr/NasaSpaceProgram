@@ -1,4 +1,4 @@
-import { THREE, OrbitControls } from '../utils/ThreeImports.js';
+import { THREE, OrbitControls } from '../../utils/ThreeImports.js';
 
 export class SpaceScene {
     constructor(gameState, assetLoader) {

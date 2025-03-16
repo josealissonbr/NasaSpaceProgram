@@ -1,5 +1,5 @@
-import { THREE, OrbitControls } from '../utils/ThreeImports.js';
-import { RocketFactory } from '../components/RocketFactory.js';
+import { THREE, OrbitControls } from '../../utils/ThreeImports.js';
+import { RocketFactory } from '../../components/RocketFactory.js';
 
 export class RocketBuilderScene {
     constructor(gameState, assetLoader) {
