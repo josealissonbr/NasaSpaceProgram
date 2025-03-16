@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Programa Espacial NASA</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="loader-container">
+        <div class="loader"></div>
+        <p>Carregando...</p>
+    </div>
+    
+    <div id="main-menu" class="hidden">
+        <h1>Programa Espacial NASA</h1>
+        <button id="start-button">Iniciar Missão</button>
+        <button id="options-button">Opções</button>
+        <button id="credits-button">Créditos</button>
+    </div>
+    
+    <div id="rocket-builder" class="hidden">
+        <div id="builder-ui">
+            <h2>Construção de Foguete</h2>
+            <div id="parts-container"></div>
+            <div id="stats-container"></div>
+            <button id="launch-button">Lançar</button>
+            <button id="back-to-menu">Voltar ao Menu</button>
+        </div>
+        <div id="builder-canvas"></div>
+    </div>
+    
+    <div id="launch-simulation" class="hidden">
+        <div id="simulation-ui">
+            <div id="telemetry"></div>
+            <button id="abort-launch">Abortar</button>
+        </div>
+        <div id="simulation-canvas"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="js/main.js"></script>
+</body>
+</html> 
