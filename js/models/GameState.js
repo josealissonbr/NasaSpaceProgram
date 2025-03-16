@@ -61,6 +61,25 @@ export class GameState {
                 missions: []
             }
         };
+        
+        // Callbacks de eventos
+        this.callbacks = {
+            onStatsChanged: null
+        };
+    }
+    
+    // Registrar callback para quando as estatísticas mudarem
+    registerStatsChangedCallback(callback) {
+        if (typeof callback === 'function') {
+            this.callbacks.onStatsChanged = callback;
+        }
+    }
+    
+    // Método chamado quando as estatísticas do foguete mudam
+    onStatsChanged() {
+        if (this.callbacks.onStatsChanged) {
+            this.callbacks.onStatsChanged(this.rocket);
+        }
     }
     
     // Método para transição de estado

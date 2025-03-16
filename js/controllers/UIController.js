@@ -19,6 +19,13 @@ export class UIController {
         
         // Inicializar UI
         this.init();
+        
+        // Registrar para eventos de mudança de estatísticas
+        if (this.gameState && typeof this.gameState.registerStatsChangedCallback === 'function') {
+            this.gameState.registerStatsChangedCallback(() => {
+                this.updateRocketStats();
+            });
+        }
     }
     
     init() {
@@ -298,8 +305,6 @@ export class UIController {
             if (launchButton) {
                 launchButton.disabled = !valid;
             }
-            
-            console.log('Estatísticas do foguete atualizadas');
         } catch (error) {
             console.error('Erro ao atualizar estatísticas do foguete:', error);
         }
@@ -395,7 +400,8 @@ export class UIController {
             const currentState = this.gameState.currentState;
             
             if (currentState === this.gameState.STATES.ROCKET_BUILDER) {
-                this.updateRocketStats();
+                // Não atualizar estatísticas a cada frame, apenas quando solicitado
+                // this.updateRocketStats();
             } else if (currentState === this.gameState.STATES.LAUNCH_SIMULATION || 
                        currentState === this.gameState.STATES.SPACE_EXPLORATION) {
                 this.updateTelemetry();

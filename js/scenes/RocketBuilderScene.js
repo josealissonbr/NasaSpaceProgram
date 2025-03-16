@@ -31,6 +31,9 @@ export class RocketBuilderScene {
         
         // Flag para indicar se a cena está inicializada
         this.isInitialized = false;
+        
+        // Flag para indicar se as estatísticas mudaram
+        this.statsChanged = false;
     }
     
     setupCamera() {
@@ -203,6 +206,9 @@ export class RocketBuilderScene {
         
         // Adicionar ao gameState
         this.gameState.rocket.parts.push(partData);
+        
+        // Marcar que as estatísticas mudaram
+        this.statsChanged = true;
         
         // Recalcular estatísticas do foguete
         this.calculateRocketStats();
@@ -383,7 +389,8 @@ export class RocketBuilderScene {
         // Atualizar estado do jogo
         this.gameState.rocket = rocketStats;
         
-        console.log('Estatísticas do foguete atualizadas:', rocketStats);
+        // Log apenas quando adicionada uma nova peça, não a cada frame
+        // console.log('Estatísticas do foguete atualizadas:', rocketStats);
     }
     
     getRocketConfiguration() {
@@ -418,6 +425,12 @@ export class RocketBuilderScene {
         // Rotacionar lentamente o foguete para exibição
         if (this.rocketContainer && this.addedParts && this.addedParts.length > 0) {
             this.rocketContainer.rotation.y += 0.002;
+        }
+        
+        // Se as estatísticas mudaram, notificar o UI Controller
+        if (this.statsChanged && this.gameState && this.gameState.onStatsChanged) {
+            this.gameState.onStatsChanged();
+            this.statsChanged = false;
         }
     }
     
