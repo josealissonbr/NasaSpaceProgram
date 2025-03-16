@@ -92,16 +92,31 @@ export class SceneManager {
             let targetElementId = null;
             let targetElement = null;
             
-            // Verificar estado atual
-            if (this.gameState.isState(this.gameState.STATES.ROCKET_BUILDER)) {
-                targetElementId = 'builder-canvas';
-            } else if (this.gameState.isState(this.gameState.STATES.LAUNCH_SIMULATION)) {
-                targetElementId = 'simulation-canvas';
-            } else if (this.gameState.isState(this.gameState.STATES.SPACE_EXPLORATION)) {
-                targetElementId = 'simulation-canvas';
-            } else {
-                console.error('Estado desconhecido ao anexar renderer:', this.gameState.currentState);
+            // Verificar se o GameState existe
+            if (!this.gameState) {
+                console.error('GameState não inicializado ao anexar renderer');
                 return;
+            }
+            
+            // Obter o estado atual
+            const currentState = this.gameState.currentState;
+            console.log(`Anexando renderer para o estado: ${currentState}`);
+            
+            // Determinar o elemento alvo com base no estado
+            if (currentState === this.gameState.STATES.ROCKET_BUILDER) {
+                targetElementId = 'builder-canvas';
+            } else if (currentState === this.gameState.STATES.LAUNCH_SIMULATION || 
+                      currentState === this.gameState.STATES.SPACE_EXPLORATION) {
+                targetElementId = 'simulation-canvas';
+            } else if (currentState === this.gameState.STATES.LOADING || 
+                      currentState === this.gameState.STATES.MAIN_MENU) {
+                // Não é necessário anexar o renderer para estes estados
+                console.log(`Não é necessário anexar renderer para o estado: ${currentState}`);
+                return;
+            } else {
+                console.error(`Estado desconhecido ao anexar renderer: ${currentState}`);
+                // Tentar usar o elemento do construtor como fallback
+                targetElementId = 'builder-canvas';
             }
             
             console.log(`Tentando anexar renderer ao elemento: ${targetElementId}`);
@@ -109,31 +124,51 @@ export class SceneManager {
             // Obter elemento
             targetElement = document.getElementById(targetElementId);
             
-            if (targetElement) {
-                // Remover qualquer conteúdo anterior
-                while (targetElement.firstChild) {
-                    targetElement.removeChild(targetElement.firstChild);
-                }
-                
-                // Garantir que o elemento esteja visível
-                targetElement.style.display = 'block';
-                
-                // Anexar o canvas do renderer
-                targetElement.appendChild(this.renderer.domElement);
-                console.log(`Renderer anexado com sucesso ao elemento: ${targetElementId}`);
-                
-                // Verificar estilo e visibilidade
-                const computedStyle = window.getComputedStyle(targetElement);
-                console.log(`Visibilidade do elemento: display=${computedStyle.display}, visibility=${computedStyle.visibility}, opacity=${computedStyle.opacity}`);
-            } else {
+            // Verificar se o elemento existe
+            if (!targetElement) {
                 console.error(`Elemento DOM alvo não encontrado: ${targetElementId}`);
                 
-                // Listar todos os elementos canvas disponíveis
-                const canvasElements = document.querySelectorAll('canvas, #builder-canvas, #simulation-canvas');
-                console.log('Elementos canvas encontrados:', Array.from(canvasElements).map(el => el.id || 'sem id'));
+                // Tentar criar o elemento se não existir
+                const parentElement = document.querySelector('#rocket-builder, #launch-simulation');
+                if (parentElement) {
+                    console.log(`Tentando criar elemento ${targetElementId} em ${parentElement.id}`);
+                    targetElement = document.createElement('div');
+                    targetElement.id = targetElementId;
+                    targetElement.style.width = '100%';
+                    targetElement.style.height = '100%';
+                    parentElement.appendChild(targetElement);
+                } else {
+                    // Listar todos os elementos canvas disponíveis
+                    const canvasElements = document.querySelectorAll('canvas, #builder-canvas, #simulation-canvas');
+                    console.log('Elementos canvas encontrados:', Array.from(canvasElements).map(el => el.id || 'sem id'));
+                    return;
+                }
             }
+            
+            // Remover qualquer conteúdo anterior
+            while (targetElement.firstChild) {
+                targetElement.removeChild(targetElement.firstChild);
+            }
+            
+            // Garantir que o elemento esteja visível
+            targetElement.style.display = 'block';
+            
+            // Verificar se o renderer existe
+            if (!this.renderer) {
+                console.error('Renderer não inicializado ao tentar anexá-lo');
+                return;
+            }
+            
+            // Anexar o canvas do renderer
+            targetElement.appendChild(this.renderer.domElement);
+            console.log(`Renderer anexado com sucesso ao elemento: ${targetElementId}`);
+            
+            // Verificar estilo e visibilidade
+            const computedStyle = window.getComputedStyle(targetElement);
+            console.log(`Visibilidade do elemento: display=${computedStyle.display}, visibility=${computedStyle.visibility}, opacity=${computedStyle.opacity}`);
         } catch (error) {
             console.error('Erro ao anexar renderer:', error);
+            console.error('Stack trace:', error.stack);
         }
     }
     
@@ -163,6 +198,15 @@ export class SceneManager {
         // Depuração de cenas disponíveis
         console.log(`Cenas disponíveis: ${Object.keys(this.scenes).join(', ')}`);
         console.log(`Builder: ${this.scenes.builder ? 'OK' : 'Ausente'}, Launch: ${this.scenes.launch ? 'OK' : 'Ausente'}, Space: ${this.scenes.space ? 'OK' : 'Ausente'}`);
+        
+        // Tratar estados especiais
+        if (state === this.gameState.STATES.LOADING || state === this.gameState.STATES.MAIN_MENU) {
+            console.log(`Estado ${state} não requer cena ativa. Usando cena do construtor como fallback.`);
+            
+            // Nos estados de loading e menu principal, podemos retornar a cena do construtor como fallback
+            // ou null se preferir não renderizar nada
+            return this.scenes.builder;
+        }
         
         if (state === this.gameState.STATES.ROCKET_BUILDER) {
             if (!this.scenes.builder) {
@@ -196,12 +240,20 @@ export class SceneManager {
             return;
         }
         
-        // Log de estado para depuração
+        // Verificar se estamos em um estado que não requer renderização
         if (this.gameState && this.gameState.currentState) {
-            // Logar a cada segundo aproximadamente (não em cada frame)
+            const currentState = this.gameState.currentState;
+            
+            // Log de estado para depuração (a cada segundo aproximadamente)
             if (!this._lastUpdateLogTime || Date.now() - this._lastUpdateLogTime > 1000) {
-                console.log(`Update executando. Estado: ${this.gameState.currentState}`);
+                console.log(`Update executando. Estado: ${currentState}`);
                 this._lastUpdateLogTime = Date.now();
+            }
+            
+            // Verificar se é um estado como LOADING que não precisa de renderização
+            if (currentState === this.gameState.STATES.LOADING) {
+                // Não renderizar nada durante o carregamento
+                return;
             }
         }
         
@@ -209,6 +261,12 @@ export class SceneManager {
         const currentScene = this.getCurrentScene();
         
         if (!currentScene) {
+            // Se não houver cena atual mas estivermos no menu principal, não é um erro
+            if (this.gameState && this.gameState.currentState === this.gameState.STATES.MAIN_MENU) {
+                // No menu principal, podemos ter um fundo estático ou nenhuma cena 3D
+                return;
+            }
+            
             console.error('Cena atual não encontrada no método update');
             if (this.gameState) {
                 console.log(`Estado atual: ${this.gameState.currentState}`);

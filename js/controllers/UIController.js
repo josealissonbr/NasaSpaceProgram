@@ -99,10 +99,43 @@ export class UIController {
     }
     
     showLaunchSimulation() {
+        console.log("Preparando para mostrar a tela de simulação de lançamento");
+        
+        // Verificar se os elementos necessários existem
+        if (!this.elements.launchSimulation) {
+            console.error("Elemento launchSimulation não encontrado no DOM");
+            return;
+        }
+        
+        if (!this.elements.simulationCanvas) {
+            this.elements.simulationCanvas = document.getElementById('simulation-canvas');
+            
+            if (!this.elements.simulationCanvas) {
+                console.error("Elemento simulation-canvas não encontrado no DOM");
+                
+                // Tentar criar o elemento
+                this.elements.simulationCanvas = document.createElement('div');
+                this.elements.simulationCanvas.id = 'simulation-canvas';
+                this.elements.simulationCanvas.style.width = '100%';
+                this.elements.simulationCanvas.style.height = '100%';
+                this.elements.launchSimulation.appendChild(this.elements.simulationCanvas);
+                
+                console.log("Elemento simulation-canvas criado dinamicamente");
+            }
+        }
+        
+        // Esconder todos os outros elementos da UI
         this.hideAllSections();
         
-        if (this.elements.launchSimulation) {
-            this.elements.launchSimulation.classList.remove('hidden');
+        // Mostrar o elemento de simulação de lançamento
+        this.elements.launchSimulation.classList.remove('hidden');
+        console.log("Elemento de simulação de lançamento visível:", 
+            !this.elements.launchSimulation.classList.contains('hidden'));
+        
+        // Garantir que o canvas de simulação esteja visível
+        if (this.elements.simulationCanvas) {
+            this.elements.simulationCanvas.style.display = 'block';
+            console.log("Canvas de simulação configurado como visível");
         }
         
         // Verificar se o GameState está disponível
@@ -144,6 +177,7 @@ export class UIController {
             console.log('Simulação de lançamento exibida e inicializada');
         } catch (error) {
             console.error('Erro ao exibir cena de lançamento:', error);
+            console.error('Stack trace:', error.stack);
         }
     }
     
