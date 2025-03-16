@@ -1,4 +1,4 @@
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+import { THREE } from '../utils/ThreeImports.js';
 import { RocketBuilderScene } from './RocketBuilderScene.js';
 import { LaunchScene } from './LaunchScene.js';
 import { SpaceScene } from './SpaceScene.js';
