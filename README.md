@@ -17,7 +17,7 @@ NASA Space Program é um jogo de simulação espacial que permite aos jogadores 
 
 1. Clone o repositório:
 ```
-git clone https://github.com/seu-usuario/nasa-space-program.git
+git clone https://github.com/josealissonbr/NasaSpaceProgram.git
 ```
 
 2. Navegue até o diretório do projeto:
