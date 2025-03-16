@@ -3,6 +3,7 @@ import { GameState } from './models/GameState.js';
 import { SceneManager } from './scenes/SceneManager.js';
 import { UIController } from './controllers/UIController.js';
 import { Config } from './config/Config.js';
+import { SoundManager } from './audio/SoundManager.js';
 
 class Game {
     constructor() {
@@ -11,6 +12,8 @@ class Game {
         this.assetLoader = new AssetLoader();
         this.sceneManager = null;
         this.uiController = null;
+        this.soundManager = new SoundManager();
+        window.soundManager = this.soundManager;
         
         this.init();
     }
