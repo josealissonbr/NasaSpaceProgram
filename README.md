@@ -1,65 +1,100 @@
-# Programa Espacial NASA
+# NASA Space Program
 
-Um simulador sandbox 3D de criação e lançamento de foguetes desenvolvido com JavaScript e Three.js.
+Um jogo de simulação espacial inspirado em Kerbal Space Program, desenvolvido em JavaScript e Three.js.
+
+## Sobre o Projeto
+
+NASA Space Program é um jogo de simulação espacial que permite aos jogadores construir e lançar seus próprios foguetes, executar manobras orbitais e explorar o espaço. O jogo foi desenvolvido com foco em uma experiência educativa e divertida sobre física orbital e exploração espacial.
 
 ## Funcionalidades
 
-- **Construção de Foguetes**: Interface intuitiva para projetar foguetes personalizados
-- **Simulação Física Realista**: Motor de física que simula gravidade, arrasto e empuxo
-- **Múltiplos Estágios**: Suporte para foguetes com vários estágios
-- **Simulação de Lançamento**: Veja seu foguete decolar e atingir o espaço
-- **Exploração Espacial**: Continue a missão no espaço após ultrapassar a atmosfera
-- **Visualização 3D**: Gráficos 3D utilizando a biblioteca Three.js
+- **Construção de Foguetes**: Interface modular para montar foguetes com diferentes componentes
+- **Simulação Física**: Motor de física que simula gravitação, aerodinâmica e órbitas
+- **Lançamento e Controle de Voo**: Sistema de controle de aceleração e separação de estágios
+- **Visão 3D Imersiva**: Gráficos 3D utilizando Three.js
+
+## Instalação
+
+1. Clone o repositório:
+```
+git clone https://github.com/seu-usuario/nasa-space-program.git
+```
+
+2. Navegue até o diretório do projeto:
+```
+cd nasa-space-program
+```
+
+3. Abra o arquivo `index.html` em um navegador web moderno.
 
 ## Como Jogar
 
-1. **Menu Principal**: Inicie o jogo e selecione "Iniciar Missão"
-2. **Construção do Foguete**: Adicione peças ao seu foguete (módulo de comando, tanques de combustível, motores, etc.)
-3. **Lançamento**: Quando seu foguete estiver pronto, clique em "Lançar" para iniciar a contagem regressiva
-4. **Controle de Voo**: Monitore a telemetria durante o voo e ajuste a trajetória se necessário
-5. **Espaço**: Se seu foguete atingir altitude suficiente, você entrará no modo de exploração espacial
+1. **Menu Principal**: Ao iniciar o jogo, você será apresentado ao menu principal onde pode iniciar uma nova missão ou ir para o construtor de foguetes.
+
+2. **Construtor de Foguetes**:
+   - Adicione componentes como cápsulas, motores e tanques de combustível
+   - Nomeie seu foguete e salve-o para uso futuro
+   - Pressione "Lançar Foguete" quando estiver pronto
+
+3. **Lançamento**:
+   - Use a barra de espaço para iniciar o lançamento
+   - Controle a aceleração com as teclas W/S ou setas para cima/baixo
+   - Pressione barra de espaço novamente para separar estágios
+   - Monitore a telemetria para alcançar a órbita
+
+## Controles
+
+- **Construtor de Foguetes**:
+  - Clique nas peças para selecioná-las
+  - Use o mouse para rotacionar a câmera
+
+- **Lançamento**:
+  - ESPAÇO: Lançar/Separar estágio
+  - W/SETA PARA CIMA: Aumentar aceleração
+  - S/SETA PARA BAIXO: Diminuir aceleração
+  - MOUSE: Controlar a câmera
+  - R: Reiniciar lançamento
+  - M: Voltar ao menu
 
 ## Tecnologias Utilizadas
 
 - **JavaScript**: Linguagem principal
-- **Three.js**: Biblioteca 3D para renderização gráfica
+- **Three.js**: Renderização 3D
 - **HTML5/CSS3**: Interface do usuário
-- **Arquitetura MVC**: Organização do código em Model-View-Controller
-
-## Requisitos
-
-- Navegador web moderno com suporte a WebGL
-- Conexão à internet para carregar as bibliotecas CDN
-
-## Instalação e Execução
-
-1. Clone este repositório: `git clone https://github.com/seu-usuario/nasa-space-program.git`
-2. Navegue até o diretório: `cd nasa-space-program`
-3. Abra o arquivo `index.html` em seu navegador ou use um servidor local
 
 ## Estrutura do Projeto
 
 ```
 /
-├── index.html              # Página principal HTML
-├── css/                    # Estilos CSS
-│   └── style.css           # Estilos principais
-├── js/                     # Código JavaScript
-│   ├── main.js             # Ponto de entrada principal
-│   ├── models/             # Classes de modelo (dados)
-│   ├── views/              # Classes de visualização 
-│   ├── controllers/        # Classes de controle
-│   ├── scenes/             # Cenas Three.js
-│   ├── components/         # Componentes reutilizáveis
-│   ├── physics/            # Motor de física
-│   ├── utils/              # Utilitários
-│   ├── loaders/            # Carregadores de assets
-│   └── config/             # Configurações
-└── assets/                 # Recursos (texturas, modelos, etc.)
-    ├── textures/           # Texturas
-    └── models/             # Modelos 3D
+├── index.html          # Ponto de entrada principal
+├── public/
+│   └── styles.css      # Estilos CSS
+├── src/
+│   ├── core/           # Núcleo do jogo
+│   │   ├── main.js
+│   │   └── SceneManager.js
+│   ├── scenes/         # Cenas do jogo
+│   │   ├── LoadingScene.js
+│   │   ├── MainMenuScene.js
+│   │   ├── RocketBuilderScene.js
+│   │   └── LaunchScene.js
+│   ├── components/     # Componentes reutilizáveis
+│   ├── physics/        # Motor de física
+│   │   └── PhysicsEngine.js
+│   ├── utils/          # Utilitários
+│   │   ├── AssetLoader.js
+│   │   ├── InputManager.js
+│   │   └── AudioManager.js
+│   └── assets/         # Recursos do jogo
+│       ├── models/
+│       ├── textures/
+│       └── sounds/
 ```
 
-## Créditos
+## Contribuição
 
-Este projeto foi desenvolvido como um simulador educacional de lançamento de foguetes. Todas as simulações são aproximações e não têm a intenção de representar com precisão absoluta as dinâmicas reais de voo espacial. 
+Contribuições são bem-vindas! Sinta-se à vontade para enviar pull requests ou abrir issues para melhorias e correções.
+
+## Licença
+
+Este projeto está licenciado sob a licença MIT. 

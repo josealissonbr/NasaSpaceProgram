@@ -1,54 +1,31 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Programa Espacial NASA</title>
-    <link rel="stylesheet" href="css/style.css">
-    
-    <!-- Importações do Three.js via importmap -->
-    <script type="importmap">
-    {
-        "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-        }
-    }
-    </script>
+    <title>NASA Space Program</title>
+    <link rel="stylesheet" href="public/styles.css">
 </head>
 <body>
-    <div id="loader-container">
-        <div class="loader"></div>
-        <p>Carregando...</p>
-    </div>
-    
-    <div id="main-menu" class="hidden">
-        <h1>Programa Espacial NASA</h1>
-        <button id="start-button">Iniciar Missão</button>
-        <button id="options-button">Opções</button>
-        <button id="credits-button">Créditos</button>
-    </div>
-    
-    <div id="rocket-builder" class="hidden">
-        <div id="builder-ui">
-            <h2>Construção de Foguete</h2>
-            <div id="parts-container"></div>
-            <div id="stats-container"></div>
-            <button id="launch-button">Lançar</button>
-            <button id="back-to-menu">Voltar ao Menu</button>
+    <div id="loading-screen" class="scene">
+        <div class="loading-content">
+            <h1>NASA Space Program</h1>
+            <div class="progress-bar">
+                <div class="progress"></div>
+            </div>
+            <p class="loading-text">Carregando recursos...</p>
         </div>
-        <div id="builder-canvas"></div>
     </div>
     
-    <div id="launch-simulation" class="hidden">
-        <div id="simulation-ui">
-            <div id="telemetry"></div>
-            <button id="abort-launch">Abortar</button>
-        </div>
-        <div id="simulation-canvas"></div>
-    </div>
+    <div id="game-container"></div>
 
-    <!-- Scripts -->
-    <script type="module" src="js/main.js"></script>
+    <!-- Scripts - Loaders do Three.js devem ser carregados ANTES do nosso módulo principal -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.157.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.157.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.157.0/examples/js/loaders/AudioLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.157.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <!-- Módulo principal do jogo -->
+    <script type="module" src="src/core/main.js"></script>
 </body>
 </html> 
