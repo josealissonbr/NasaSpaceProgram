@@ -41,9 +41,7 @@ export class UIController {
         
         this.uiLoaded = allElementsFound;
         
-        if (this.uiLoaded) {
-            console.log('Interface do usuário inicializada com sucesso');
-        } else {
+        if (!this.uiLoaded) {
             console.error('Falha ao inicializar interface do usuário - alguns elementos não foram encontrados');
         }
     }
@@ -60,8 +58,6 @@ export class UIController {
         if (this.gameState && this.gameState.setState) {
             this.gameState.setState(this.gameState.STATES.MAIN_MENU);
         }
-        
-        console.log('Menu principal exibido');
     }
     
     showRocketBuilder() {
@@ -89,7 +85,6 @@ export class UIController {
         if (this.sceneManager && this.sceneManager.showRocketBuilder) {
             try {
                 this.sceneManager.showRocketBuilder();
-                console.log('Construtor de foguete exibido');
             } catch (error) {
                 console.error('Erro ao exibir cena do construtor de foguete:', error);
             }
@@ -99,8 +94,6 @@ export class UIController {
     }
     
     showLaunchSimulation() {
-        console.log("Preparando para mostrar a tela de simulação de lançamento");
-        
         // Verificar se os elementos necessários existem
         if (!this.elements.launchSimulation) {
             console.error("Elemento launchSimulation não encontrado no DOM");
@@ -129,13 +122,10 @@ export class UIController {
         
         // Mostrar o elemento de simulação de lançamento
         this.elements.launchSimulation.classList.remove('hidden');
-        console.log("Elemento de simulação de lançamento visível:", 
-            !this.elements.launchSimulation.classList.contains('hidden'));
         
         // Garantir que o canvas de simulação esteja visível
         if (this.elements.simulationCanvas) {
             this.elements.simulationCanvas.style.display = 'block';
-            console.log("Canvas de simulação configurado como visível");
         }
         
         // Verificar se o GameState está disponível
@@ -147,14 +137,15 @@ export class UIController {
         // Verificar se o estado LAUNCH_SIMULATION existe
         if (!this.gameState.STATES || !this.gameState.STATES.LAUNCH_SIMULATION) {
             console.error('Estado LAUNCH_SIMULATION não definido no GameState');
-            console.log('Estados disponíveis:', this.gameState.STATES);
             return;
         }
         
         // Definir o estado para a simulação de lançamento
         const success = this.gameState.setState(this.gameState.STATES.LAUNCH_SIMULATION);
-        console.log(`Estado definido para LAUNCH_SIMULATION: ${success ? 'Sucesso' : 'Falha'}`);
-        console.log(`Estado atual após mudança: ${this.gameState.currentState}`);
+        if (!success) {
+            console.error('Falha ao definir estado para LAUNCH_SIMULATION');
+            return;
+        }
         
         // Inicializar telemetria
         this.updateTelemetry();
@@ -174,10 +165,9 @@ export class UIController {
             
             // Iniciar a simulação de lançamento
             this.sceneManager.startLaunchSimulation();
-            console.log('Simulação de lançamento exibida e inicializada');
+            console.log('Simulação de lançamento inicializada');
         } catch (error) {
             console.error('Erro ao exibir cena de lançamento:', error);
-            console.error('Stack trace:', error.stack);
         }
     }
     

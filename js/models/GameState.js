@@ -84,8 +84,6 @@ export class GameState {
     
     // Método para transição de estado
     setState(newState) {
-        console.log(`Tentando mudar estado de "${this.currentState}" para "${newState}"`);
-        
         // Verificar se o estado é válido
         if (!newState) {
             console.error('Novo estado é nulo ou indefinido');
@@ -106,7 +104,10 @@ export class GameState {
                 this.currentState = newState;
             }
             
-            console.log(`Estado mudado com sucesso de "${oldState}" para "${this.currentState}"`);
+            // Registro importante mas não tão frequente, manter
+            if (oldState !== this.currentState) {
+                console.log(`Estado mudado: ${oldState} -> ${this.currentState}`);
+            }
             
             this.logEvent({
                 type: 'state_change',
@@ -120,23 +121,20 @@ export class GameState {
         
         // Se chegou aqui, o estado é inválido
         console.error(`Estado inválido: "${newState}"`);
-        console.log('Estados válidos:', this.STATES);
         return false;
     }
     
     // Método para verificar o estado atual
     isState(state) {
         if (!state) {
-            console.error('Estado a verificar é nulo ou indefinido');
+            // Este erro pode ocorrer frequentemente, silenciá-lo
             return false;
         }
         
         if (!this.currentState) {
-            console.error('Estado atual é nulo ou indefinido');
+            // Este erro pode ocorrer frequentemente, silenciá-lo
             return false;
         }
-        
-        console.log(`Verificando estado: ${state} vs atual: ${this.currentState}`);
         
         // Verificar se o estado é uma string válida
         if (typeof state === 'string') {
@@ -144,7 +142,7 @@ export class GameState {
         }
         
         // Se chegou até aqui, o estado é inválido
-        console.error(`Tipo de estado inválido: ${typeof state}`);
+        // Este erro pode ocorrer frequentemente em alguns casos, silenciá-lo
         return false;
     }
     

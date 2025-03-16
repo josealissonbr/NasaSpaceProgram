@@ -122,8 +122,6 @@ export class LaunchScene {
     }
     
     setupLaunch(rocketConfig) {
-        console.log('Iniciando configuração de lançamento com rocket config:', rocketConfig);
-        
         // Limpar qualquer foguete anterior
         this.resetRocket();
         
@@ -166,8 +164,6 @@ export class LaunchScene {
         
         // Resetar configurações de controle
         this.setupInitialControls();
-        
-        console.log('Configuração de lançamento concluída');
     }
     
     resetRocket() {
@@ -179,12 +175,9 @@ export class LaunchScene {
     }
     
     startLaunch() {
-        console.log('Método startLaunch chamado. Status atual:', this.gameState.flight.status);
-        // Método necessário para compatibilidade com o SceneManager
-        // Simular a mesma lógica que está no InputController
         if (this.gameState.flight.status === 'pre-launch') {
             this.gameState.flight.status = 'launching';
-            console.log('Preparando para lançamento - Chamado via SceneManager');
+            console.log('Preparando para lançamento - Contagem regressiva iniciada');
             
             // Iniciar contagem regressiva de 5 segundos
             this.gameState.flight.missionTime = -5;
@@ -210,8 +203,6 @@ export class LaunchScene {
             
             // Atualizar interface
             this.controlsDisplay.updateStatus('launching');
-        } else {
-            console.log('Não iniciando lançamento pois status não é pre-launch');
         }
     }
     
@@ -268,10 +259,10 @@ export class LaunchScene {
             deltaTime = 0.016; // Valor padrão (aproximadamente 60 FPS)
         }
 
-        // Verificar se é a primeira atualização após inicialização
+        // Verificar se é a primeira atualização após inicialização e aplicar debug apenas uma vez
         if (this.elapsedTime === 0) {
-            // Log de depuração detalhado apenas na primeira vez
-            this.debugScene();
+            // Chamada de debug apenas na primeira vez - comentado para reduzir logs
+            // this.debugScene();
         }
 
         // Atualizar tempo decorrido
@@ -367,6 +358,7 @@ export class LaunchScene {
     
     // Método de depuração para verificar a estrutura da cena
     debugScene() {
+        // Método mantido, mas chamado apenas sob demanda, não automaticamente
         console.log('====== DEBUG DA CENA DE LANÇAMENTO ======');
         
         // Verificar a cena

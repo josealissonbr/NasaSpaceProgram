@@ -22,7 +22,6 @@ export class CameraController {
             // Posição padrão se o foguete não estiver disponível
             this.camera.position.set(15, 8, 15);
             this.camera.lookAt(0, 5, 0);
-            console.log("Câmera posicionada na visão padrão para o lançamento");
         } else {
             // Posicionar para olhar para o foguete
             const rocketPosition = rocket.position.clone();
@@ -32,7 +31,6 @@ export class CameraController {
                 rocketPosition.z + 15
             );
             this.camera.lookAt(rocketPosition);
-            console.log(`Câmera posicionada para o lançamento, olhando para o foguete em: ${rocketPosition.x}, ${rocketPosition.y}, ${rocketPosition.z}`);
         }
     }
 

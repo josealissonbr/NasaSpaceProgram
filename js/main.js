@@ -94,11 +94,11 @@ class Game {
                 
                 // Verificar o estado atual
                 if (this.gameState.currentState) {
-                    // Log a cada segundo (não em cada frame)
-                    if (!this._lastLogTime || Date.now() - this._lastLogTime > 1000) {
-                        console.log(`Game loop executando. Estado: ${this.gameState.currentState}`);
-                        this._lastLogTime = Date.now();
-                    }
+                    // Remover logs de estado que são gerados a cada segundo
+                    // if (!this._lastLogTime || Date.now() - this._lastLogTime > 1000) {
+                    //     console.log(`Game loop executando. Estado: ${this.gameState.currentState}`);
+                    //     this._lastLogTime = Date.now();
+                    // }
                 } else {
                     console.error('Estado do jogo não definido');
                 }
