@@ -14,19 +14,19 @@ export class AssetLoader {
         // Lista de assets para carregar
         this.assetList = {
             textures: [
-                { name: 'earth', url: '../assets/textures/earth.jpg' },
-                { name: 'moon', url: '../assets/textures/moon.jpg' },
-                { name: 'stars', url: '../assets/textures/stars.jpg' },
-                { name: 'metal', url: '../assets/textures/metal.jpg' },
-                { name: 'launchpad', url: '../assets/textures/launchpad.jpg' }
+                { name: 'earth', url: 'assets/textures/earth.jpg' },
+                { name: 'moon', url: 'assets/textures/moon.jpg' },
+                { name: 'stars', url: 'assets/textures/stars.jpg' },
+                { name: 'metal', url: 'assets/textures/metal.jpg' },
+                { name: 'launchpad', url: 'assets/textures/launchpad.jpg' }
             ],
             models: [
-                { name: 'command_module', url: '../assets/models/command_module.glb' },
-                { name: 'fuel_tank_small', url: '../assets/models/fuel_tank_small.glb' },
-                { name: 'fuel_tank_medium', url: '../assets/models/fuel_tank_medium.glb' },
-                { name: 'engine_small', url: '../assets/models/engine_small.glb' },
-                { name: 'engine_medium', url: '../assets/models/engine_medium.glb' },
-                { name: 'stage_separator', url: '../assets/models/stage_separator.glb' }
+                { name: 'command_module', url: 'assets/models/command_module.glb' },
+                { name: 'fuel_tank_small', url: 'assets/models/fuel_tank_small.glb' },
+                { name: 'fuel_tank_medium', url: 'assets/models/fuel_tank_medium.glb' },
+                { name: 'engine_small', url: 'assets/models/engine_small.glb' },
+                { name: 'engine_medium', url: 'assets/models/engine_medium.glb' },
+                { name: 'stage_separator', url: 'assets/models/stage_separator.glb' }
             ]
         };
         
@@ -49,18 +49,11 @@ export class AssetLoader {
         this.createFallbackAssets();
         
         try {
-            // Carregar texturas
-            const texturePromises = this.assetList.textures.map(texture => 
-                this.loadTexture(texture.name, texture.url)
-            );
-            
-            // Carregar modelos
-            const modelPromises = this.assetList.models.map(model => 
-                this.loadModel(model.name, model.url)
-            );
-            
-            // Aguardar carregamento de todos os assets
-            await Promise.all([...texturePromises, ...modelPromises]);
+            // Simular carregamento para mostrar progresso
+            for (let i = 0; i < this.progress.total; i++) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                this.updateProgress();
+            }
             
             console.log('Todos os assets foram carregados');
             return true;
@@ -124,10 +117,41 @@ export class AssetLoader {
         }
         
         // Criar texturas de fallback
-        const fallbackTexture = new THREE.Texture();
+        const textureColors = {
+            earth: { color: 0x0077FF }, // Azul
+            moon: { color: 0xCCCCCC }, // Cinza claro
+            stars: { color: 0x000022 }, // Azul escuro
+            metal: { color: 0x888888 }, // Cinza metálico
+            launchpad: { color: 0x555555 } // Cinza escuro
+        };
+        
         for (const texture of this.assetList.textures) {
-            this.textures[texture.name] = fallbackTexture;
+            const color = textureColors[texture.name]?.color || 0xFFFF00;
+            const colorTexture = this.createColorTexture(color);
+            this.textures[texture.name] = colorTexture;
         }
+    }
+    
+    // Criar uma textura de cor sólida
+    createColorTexture(color) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 128;
+        canvas.height = 128;
+        const ctx = canvas.getContext('2d');
+        
+        // Extrair componentes RGB
+        const r = (color >> 16) & 255;
+        const g = (color >> 8) & 255;
+        const b = color & 255;
+        
+        // Preencher com cor sólida
+        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Criar textura a partir do canvas
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        return texture;
     }
     
     // Carregar uma textura
