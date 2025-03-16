@@ -1,6 +1,6 @@
 import { THREE } from '../utils/ThreeImports.js';
 import { RocketBuilderScene } from './RocketBuilderScene.js';
-import { LaunchScene } from './LaunchScene.js';
+import { LaunchScene } from './launch/LaunchScene.js';
 import { SpaceScene } from './SpaceScene.js';
 
 export class SceneManager {
