@@ -78,17 +78,37 @@ export class SceneManager {
         }
         
         try {
-            // Limpar canvas existentes
-            if (this.domElements.builderCanvas) {
-                while (this.domElements.builderCanvas.firstChild) {
-                    this.domElements.builderCanvas.removeChild(this.domElements.builderCanvas.firstChild);
+            // Determinar qual elemento DOM usar com base no estado atual
+            let targetElement = null;
+            
+            if (this.gameState && this.gameState.currentState) {
+                if (this.gameState.currentState === this.gameState.STATES.ROCKET_BUILDER) {
+                    targetElement = this.domElements.builderCanvas;
+                } else if (this.gameState.currentState === this.gameState.STATES.LAUNCH_SIMULATION ||
+                          this.gameState.currentState === this.gameState.STATES.SPACE_EXPLORATION) {
+                    targetElement = this.domElements.simulationCanvas;
                 }
-                this.domElements.builderCanvas.appendChild(this.renderer.domElement);
-            } else {
-                console.error('Elemento DOM para construtor de foguete não encontrado');
             }
             
-            console.log('Renderer anexado aos elementos DOM');
+            // Usar elemento padrão se não conseguir determinar
+            if (!targetElement) {
+                console.warn('Não foi possível determinar o elemento DOM alvo. Usando o elemento do construtor de foguetes.');
+                targetElement = this.domElements.builderCanvas;
+            }
+            
+            // Limpar canvas existentes
+            if (targetElement) {
+                // Remover qualquer conteúdo anterior
+                while (targetElement.firstChild) {
+                    targetElement.removeChild(targetElement.firstChild);
+                }
+                
+                // Anexar o canvas do renderer
+                targetElement.appendChild(this.renderer.domElement);
+                console.log(`Renderer anexado ao elemento: ${targetElement.id}`);
+            } else {
+                console.error('Elemento DOM alvo não encontrado');
+            }
         } catch (error) {
             console.error('Erro ao anexar renderer:', error);
         }
@@ -273,7 +293,11 @@ export class SceneManager {
             // Iniciar renderização
             this.startRendering();
             
-            console.log('Simulação de lançamento iniciada');
+            // Iniciar o lançamento do foguete
+            console.log('Iniciando o lançamento do foguete');
+            this.scenes.launch.startLaunch();
+            
+            console.log('Simulação de lançamento inicializada');
         } catch (error) {
             console.error('Erro ao iniciar simulação de lançamento:', error);
         }

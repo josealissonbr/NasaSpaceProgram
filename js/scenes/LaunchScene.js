@@ -199,17 +199,22 @@ export class LaunchScene {
     }
     
     setupLaunch(rocketConfig) {
-        // Limpar cena de qualquer foguete anterior
+        // Limpar qualquer foguete anterior
         this.resetRocket();
         
-        // Criar foguete baseado na configuração recebida
+        // Inicializar array de tweens
+        this.tweens = [];
+        
+        // Construir o foguete da configuração
         this.rocket = this.rocketFactory.createRocket(rocketConfig);
         
-        // Posicionar o foguete na plataforma de lançamento
-        this.rocket.position.y = 0.5; // Acima da plataforma
+        // Adicionar o foguete ao grupo
         this.rocketGroup.add(this.rocket);
         
-        // Encontrar todos os motores para animação posterior
+        // Posicionar foguete na plataforma de lançamento
+        this.rocket.position.set(0, 0.25, 0);
+        
+        // Localizar partes de motor do foguete para efeitos
         this.findEngines();
         
         // Preparar simulação física
@@ -251,13 +256,32 @@ export class LaunchScene {
     
     resetCamera() {
         // Posicionar a câmera para visualizar o lançamento
-        this.camera.position.set(20, 10, 20);
-        this.camera.lookAt(this.rocket.position);
+        if (!this.rocket) {
+            // Posição padrão se o foguete não estiver disponível
+            this.camera.position.set(15, 8, 15);
+            this.camera.lookAt(0, 5, 0);
+            console.log("Câmera posicionada na visão padrão para o lançamento");
+        } else {
+            // Posicionar para olhar para o foguete
+            const rocketPosition = this.rocket.position.clone();
+            this.camera.position.set(
+                rocketPosition.x + 15,
+                rocketPosition.y + 10,
+                rocketPosition.z + 15
+            );
+            this.camera.lookAt(rocketPosition);
+            console.log(`Câmera posicionada para o lançamento, olhando para o foguete em: ${rocketPosition.x}, ${rocketPosition.y}, ${rocketPosition.z}`);
+        }
     }
     
     startLaunch() {
         // Atualizar estado do jogo
         this.gameState.flight.status = 'launching';
+        
+        // Definir tempo de missão para -5 (contagem regressiva de 5 segundos)
+        this.gameState.flight.missionTime = -5;
+        
+        console.log('Iniciando contagem regressiva de 5 segundos...');
         
         // Inicia a contagem regressiva (5 segundos)
         setTimeout(() => {
@@ -269,6 +293,8 @@ export class LaunchScene {
             
             // Esconder estrutura de lançamento
             this.hideStructureOnLaunch();
+            
+            console.log('Contagem regressiva concluída! Foguete iniciando voo...');
         }, 5000);
     }
     
@@ -424,6 +450,11 @@ export class LaunchScene {
     }
     
     update(deltaTime) {
+        // Verificar se deltaTime é válido
+        if (!deltaTime || isNaN(deltaTime) || deltaTime <= 0) {
+            deltaTime = 0.016; // Valor padrão (aproximadamente 60 FPS)
+        }
+
         // Atualizar tempo decorrido
         this.elapsedTime += deltaTime;
         
@@ -431,13 +462,18 @@ export class LaunchScene {
         const timeSinceLastUpdate = this.elapsedTime - this.lastUpdateTime;
         this.lastUpdateTime = this.elapsedTime;
         
+        // Log de depuração a cada segundo
+        if (Math.floor(this.elapsedTime) > Math.floor(this.elapsedTime - deltaTime)) {
+            console.log(`Simulação: t=${this.elapsedTime.toFixed(1)}s, status=${this.gameState.flight.status}`);
+        }
+        
         // Atualizar a simulação física se o foguete estiver em voo
         if (this.gameState.flight.status === 'flying' && this.rocket) {
             // Simular física
             const newState = this.physics.simulateStep(deltaTime);
             
             // Atualizar posição do foguete na cena
-            this.rocket.position.y = newState.altitude;
+            this.rocket.position.y = newState.altitude * 0.01; // Escala para visualização
             
             // Se estiver acima da plataforma de lançamento, adicionar movimento lateral
             if (newState.altitude > 5) {
@@ -464,6 +500,9 @@ export class LaunchScene {
                 // Espaço alcançado (linha de Kármán a 100km)
                 this.gameState.checkSpaceReached(newState.altitude);
             }
+        } else if (this.gameState.flight.status === 'launching' && this.rocket) {
+            // Durante a contagem regressiva, apenas atualizar o tempo de missão com valores negativos
+            this.gameState.flight.missionTime = Math.min(0, this.gameState.flight.missionTime - deltaTime);
         }
         
         // Atualizar efeitos dos motores
@@ -475,7 +514,12 @@ export class LaunchScene {
         // Atualizar animações
         if (this.tweens && this.tweens.length > 0) {
             // Filtrar tweens completos
-            this.tweens = this.tweens.filter(tween => !tween.update(deltaTime));
+            this.tweens = this.tweens.filter(tween => {
+                if (typeof tween.update === 'function') {
+                    return !tween.update(deltaTime);
+                }
+                return false;
+            });
         }
     }
     
