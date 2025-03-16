@@ -84,27 +84,68 @@ export class GameState {
     
     // Método para transição de estado
     setState(newState) {
-        if (this.STATES[newState] || Object.values(this.STATES).includes(newState)) {
+        console.log(`Tentando mudar estado de "${this.currentState}" para "${newState}"`);
+        
+        // Verificar se o estado é válido
+        if (!newState) {
+            console.error('Novo estado é nulo ou indefinido');
+            return false;
+        }
+        
+        // Verificar se o estado é um dos estados conhecidos
+        const isValidState = Object.values(this.STATES).includes(newState) || 
+                           Object.keys(this.STATES).includes(newState);
+        
+        if (isValidState) {
             const oldState = this.currentState;
-            this.currentState = newState;
+            
+            // Se o estado for fornecido como chave (ex: 'ROCKET_BUILDER'), usar o valor
+            if (Object.keys(this.STATES).includes(newState) && this.STATES[newState]) {
+                this.currentState = this.STATES[newState];
+            } else {
+                this.currentState = newState;
+            }
+            
+            console.log(`Estado mudado com sucesso de "${oldState}" para "${this.currentState}"`);
             
             this.logEvent({
                 type: 'state_change',
                 from: oldState,
-                to: newState,
+                to: this.currentState,
                 time: this.clock.getElapsedTime()
             });
             
             return true;
         }
         
-        console.error(`Estado inválido: ${newState}`);
+        // Se chegou aqui, o estado é inválido
+        console.error(`Estado inválido: "${newState}"`);
+        console.log('Estados válidos:', this.STATES);
         return false;
     }
     
     // Método para verificar o estado atual
     isState(state) {
-        return this.currentState === state;
+        if (!state) {
+            console.error('Estado a verificar é nulo ou indefinido');
+            return false;
+        }
+        
+        if (!this.currentState) {
+            console.error('Estado atual é nulo ou indefinido');
+            return false;
+        }
+        
+        console.log(`Verificando estado: ${state} vs atual: ${this.currentState}`);
+        
+        // Verificar se o estado é uma string válida
+        if (typeof state === 'string') {
+            return this.currentState === state;
+        }
+        
+        // Se chegou até aqui, o estado é inválido
+        console.error(`Tipo de estado inválido: ${typeof state}`);
+        return false;
     }
     
     // Redefinir o estado do foguete

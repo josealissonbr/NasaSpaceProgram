@@ -105,23 +105,45 @@ export class UIController {
             this.elements.launchSimulation.classList.remove('hidden');
         }
         
-        if (this.gameState && this.gameState.setState) {
-            this.gameState.setState(this.gameState.STATES.LAUNCH_SIMULATION);
+        // Verificar se o GameState está disponível
+        if (!this.gameState) {
+            console.error('GameState não inicializado na UIController');
+            return;
         }
+        
+        // Verificar se o estado LAUNCH_SIMULATION existe
+        if (!this.gameState.STATES || !this.gameState.STATES.LAUNCH_SIMULATION) {
+            console.error('Estado LAUNCH_SIMULATION não definido no GameState');
+            console.log('Estados disponíveis:', this.gameState.STATES);
+            return;
+        }
+        
+        // Definir o estado para a simulação de lançamento
+        const success = this.gameState.setState(this.gameState.STATES.LAUNCH_SIMULATION);
+        console.log(`Estado definido para LAUNCH_SIMULATION: ${success ? 'Sucesso' : 'Falha'}`);
+        console.log(`Estado atual após mudança: ${this.gameState.currentState}`);
         
         // Inicializar telemetria
         this.updateTelemetry();
         
-        // Inicializar a cena de lançamento
-        if (this.sceneManager && this.sceneManager.startLaunchSimulation) {
-            try {
-                this.sceneManager.startLaunchSimulation();
-                console.log('Simulação de lançamento exibida');
-            } catch (error) {
-                console.error('Erro ao exibir cena de lançamento:', error);
+        // Inicializar a cena de lançamento apenas se o SceneManager estiver disponível
+        if (!this.sceneManager) {
+            console.error('SceneManager não inicializado na UIController');
+            return;
+        }
+        
+        try {
+            // Verificar se o método startLaunchSimulation existe
+            if (typeof this.sceneManager.startLaunchSimulation !== 'function') {
+                console.error('Método startLaunchSimulation não encontrado no SceneManager');
+                return;
             }
-        } else {
-            console.error('SceneManager não inicializado corretamente');
+            
+            // Iniciar a simulação de lançamento
+            this.sceneManager.startLaunchSimulation();
+            console.log('Simulação de lançamento exibida e inicializada');
+        } catch (error) {
+            console.error('Erro ao exibir cena de lançamento:', error);
         }
     }
     

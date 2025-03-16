@@ -57,10 +57,25 @@ export class SceneManager {
     
     createScenes() {
         try {
-            // Inicializar cenas
+            // Criar instâncias das cenas
+            console.log('Criando cenas...');
+            
+            // Cena do construtor de foguetes
             this.scenes.builder = new RocketBuilderScene(this.gameState, this.assetLoader);
+            console.log('Cena do construtor de foguetes criada:', 
+                this.scenes.builder ? 'Sucesso' : 'Falha');
+            
+            // Cena de lançamento
             this.scenes.launch = new LaunchScene(this.gameState, this.assetLoader);
+            console.log('Cena de lançamento criada:', 
+                this.scenes.launch ? 'Sucesso' : 'Falha', 
+                this.scenes.launch.scene ? 'Cena OK' : 'Sem cena',
+                this.scenes.launch.camera ? 'Câmera OK' : 'Sem câmera');
+            
+            // Cena espacial
             this.scenes.space = new SpaceScene(this.gameState, this.assetLoader);
+            console.log('Cena espacial criada:', 
+                this.scenes.space ? 'Sucesso' : 'Falha');
             
             console.log('Cenas criadas com sucesso');
             
@@ -72,42 +87,50 @@ export class SceneManager {
     }
     
     attachRenderer() {
-        if (!this.renderer) {
-            console.error('Renderer não inicializado');
-            return;
-        }
-        
         try {
-            // Determinar qual elemento DOM usar com base no estado atual
+            // Determinar o elemento DOM correto
+            let targetElementId = null;
             let targetElement = null;
             
-            if (this.gameState && this.gameState.currentState) {
-                if (this.gameState.currentState === this.gameState.STATES.ROCKET_BUILDER) {
-                    targetElement = this.domElements.builderCanvas;
-                } else if (this.gameState.currentState === this.gameState.STATES.LAUNCH_SIMULATION ||
-                          this.gameState.currentState === this.gameState.STATES.SPACE_EXPLORATION) {
-                    targetElement = this.domElements.simulationCanvas;
-                }
+            // Verificar estado atual
+            if (this.gameState.isState(this.gameState.STATES.ROCKET_BUILDER)) {
+                targetElementId = 'builder-canvas';
+            } else if (this.gameState.isState(this.gameState.STATES.LAUNCH_SIMULATION)) {
+                targetElementId = 'simulation-canvas';
+            } else if (this.gameState.isState(this.gameState.STATES.SPACE_EXPLORATION)) {
+                targetElementId = 'simulation-canvas';
+            } else {
+                console.error('Estado desconhecido ao anexar renderer:', this.gameState.currentState);
+                return;
             }
             
-            // Usar elemento padrão se não conseguir determinar
-            if (!targetElement) {
-                console.warn('Não foi possível determinar o elemento DOM alvo. Usando o elemento do construtor de foguetes.');
-                targetElement = this.domElements.builderCanvas;
-            }
+            console.log(`Tentando anexar renderer ao elemento: ${targetElementId}`);
             
-            // Limpar canvas existentes
+            // Obter elemento
+            targetElement = document.getElementById(targetElementId);
+            
             if (targetElement) {
                 // Remover qualquer conteúdo anterior
                 while (targetElement.firstChild) {
                     targetElement.removeChild(targetElement.firstChild);
                 }
                 
+                // Garantir que o elemento esteja visível
+                targetElement.style.display = 'block';
+                
                 // Anexar o canvas do renderer
                 targetElement.appendChild(this.renderer.domElement);
-                console.log(`Renderer anexado ao elemento: ${targetElement.id}`);
+                console.log(`Renderer anexado com sucesso ao elemento: ${targetElementId}`);
+                
+                // Verificar estilo e visibilidade
+                const computedStyle = window.getComputedStyle(targetElement);
+                console.log(`Visibilidade do elemento: display=${computedStyle.display}, visibility=${computedStyle.visibility}, opacity=${computedStyle.opacity}`);
             } else {
-                console.error('Elemento DOM alvo não encontrado');
+                console.error(`Elemento DOM alvo não encontrado: ${targetElementId}`);
+                
+                // Listar todos os elementos canvas disponíveis
+                const canvasElements = document.querySelectorAll('canvas, #builder-canvas, #simulation-canvas');
+                console.log('Elementos canvas encontrados:', Array.from(canvasElements).map(el => el.id || 'sem id'));
             }
         } catch (error) {
             console.error('Erro ao anexar renderer:', error);
@@ -122,27 +145,74 @@ export class SceneManager {
         }
         
         const state = this.gameState.currentState;
+        console.log(`Obtendo cena atual. Estado: ${state}`);
+        
+        // Verificar se o estado é válido
+        if (!state) {
+            console.error('Estado atual é nulo ou indefinido');
+            console.log('Estados conhecidos:', Object.values(this.gameState.STATES));
+            return null;
+        }
+        
+        // Verificar se as cenas existem
+        if (!this.scenes) {
+            console.error('Cenas não inicializadas');
+            return null;
+        }
+        
+        // Depuração de cenas disponíveis
+        console.log(`Cenas disponíveis: ${Object.keys(this.scenes).join(', ')}`);
+        console.log(`Builder: ${this.scenes.builder ? 'OK' : 'Ausente'}, Launch: ${this.scenes.launch ? 'OK' : 'Ausente'}, Space: ${this.scenes.space ? 'OK' : 'Ausente'}`);
         
         if (state === this.gameState.STATES.ROCKET_BUILDER) {
+            if (!this.scenes.builder) {
+                console.error('Cena do construtor de foguetes não encontrada');
+                return null;
+            }
             return this.scenes.builder;
         } else if (state === this.gameState.STATES.LAUNCH_SIMULATION) {
+            if (!this.scenes.launch) {
+                console.error('Cena de lançamento não encontrada');
+                return null;
+            }
             return this.scenes.launch;
         } else if (state === this.gameState.STATES.SPACE_EXPLORATION) {
+            if (!this.scenes.space) {
+                console.error('Cena espacial não encontrada');
+                return null;
+            }
             return this.scenes.space;
         }
         
+        console.error(`Estado desconhecido: ${state}`);
+        console.log('Estados conhecidos:', Object.values(this.gameState.STATES));
         return null;
     }
     
     update(deltaTime) {
+        // Verificar inicialização do renderer
         if (!this.renderer) {
-            console.error('Renderer não inicializado');
+            console.error('Renderer não inicializado no método update');
             return;
         }
         
+        // Log de estado para depuração
+        if (this.gameState && this.gameState.currentState) {
+            // Logar a cada segundo aproximadamente (não em cada frame)
+            if (!this._lastUpdateLogTime || Date.now() - this._lastUpdateLogTime > 1000) {
+                console.log(`Update executando. Estado: ${this.gameState.currentState}`);
+                this._lastUpdateLogTime = Date.now();
+            }
+        }
+        
+        // Obter a cena atual
         const currentScene = this.getCurrentScene();
         
         if (!currentScene) {
+            console.error('Cena atual não encontrada no método update');
+            if (this.gameState) {
+                console.log(`Estado atual: ${this.gameState.currentState}`);
+            }
             return;
         }
         
@@ -150,24 +220,39 @@ export class SceneManager {
             // Atualizar a cena atual
             if (typeof currentScene.update === 'function') {
                 currentScene.update(deltaTime);
+            } else {
+                console.error(`Método update não encontrado na cena ${this.gameState.currentState}`);
+                console.log('Métodos disponíveis:', Object.getOwnPropertyNames(Object.getPrototypeOf(currentScene)));
+            }
+            
+            // Verificar se a cena e câmera estão disponíveis para renderização
+            if (!currentScene.scene) {
+                console.error(`Propriedade scene não encontrada na cena ${this.gameState.currentState}`);
+                return;
+            }
+            
+            if (!currentScene.camera) {
+                console.error(`Propriedade camera não encontrada na cena ${this.gameState.currentState}`);
+                return;
             }
             
             // Renderizar a cena
-            if (currentScene.scene && currentScene.camera) {
-                this.renderer.render(currentScene.scene, currentScene.camera);
-            } else {
-                console.warn('Cena ou câmera não definidas para renderização');
-            }
+            console.log(`Renderizando cena: ${this.gameState.currentState}. Camera em (${currentScene.camera.position.x.toFixed(1)}, ${currentScene.camera.position.y.toFixed(1)}, ${currentScene.camera.position.z.toFixed(1)})`);
+            this.renderer.render(currentScene.scene, currentScene.camera);
             
             // Verificar transição para o espaço
-            if (this.gameState.isState && 
+            if (this.gameState && this.gameState.isState && 
                 this.gameState.isState(this.gameState.STATES.LAUNCH_SIMULATION) && 
                 this.gameState.checkSpaceReached && 
+                this.gameState.flight && this.gameState.flight.altitude &&
                 this.gameState.checkSpaceReached(this.gameState.flight.altitude)) {
+                
+                console.log('Altitude suficiente atingida. Iniciando transição para o espaço...');
                 this.transitionToSpace();
             }
         } catch (error) {
             console.error('Erro ao atualizar/renderizar cena:', error);
+            console.error('Stack trace:', error.stack);
         }
     }
     
@@ -269,37 +354,76 @@ export class SceneManager {
     
     // Simulação de lançamento
     startLaunchSimulation() {
-        if (!this.scenes || !this.scenes.launch || !this.scenes.builder) {
-            console.error('Cenas necessárias não encontradas');
+        console.log('Iniciando preparação da simulação de lançamento...');
+        
+        // Verificar cenas necessárias
+        if (!this.scenes) {
+            console.error('Objeto scenes não inicializado');
+            return;
+        }
+        
+        if (!this.scenes.launch) {
+            console.error('Cena de lançamento não encontrada');
+            return;
+        }
+        
+        if (!this.scenes.builder) {
+            console.error('Cena do construtor não encontrada');
+            return;
+        }
+        
+        // Verificar estado do jogo
+        if (!this.gameState) {
+            console.error('GameState não inicializado');
             return;
         }
         
         try {
             // Parar qualquer renderização anterior
             this.stopRendering();
+            console.log('Renderização anterior parada');
+            
+            // Definir o estado para simulação de lançamento
+            const stateSuccess = this.gameState.setState(this.gameState.STATES.LAUNCH_SIMULATION);
+            console.log(`Estado definido para LAUNCH_SIMULATION: ${stateSuccess ? 'Sucesso' : 'Falha'}`);
+            console.log(`Estado atual: ${this.gameState.currentState}`);
             
             // Transferir dados do foguete para cena de lançamento
             const rocketConfig = this.scenes.builder.getRocketConfiguration();
-            this.scenes.launch.setupLaunch(rocketConfig);
+            console.log('Configuração do foguete obtida:', rocketConfig ? 'Sucesso' : 'Falha');
             
-            // Atualizar estado do jogo
-            if (this.gameState.resetFlight) {
+            this.scenes.launch.setupLaunch(rocketConfig);
+            console.log('Configuração de lançamento concluída');
+            
+            // Atualizar estado do voo
+            if (typeof this.gameState.resetFlight === 'function') {
                 this.gameState.resetFlight();
+                console.log('Estado de voo resetado');
+            } else {
+                console.error('Método resetFlight não encontrado no GameState');
             }
             
             // Anexar renderer novamente
             this.attachRenderer();
+            console.log('Renderer anexado para simulação de lançamento');
             
             // Iniciar renderização
             this.startRendering();
+            console.log('Loop de renderização iniciado');
             
             // Iniciar o lançamento do foguete
-            console.log('Iniciando o lançamento do foguete');
-            this.scenes.launch.startLaunch();
+            console.log('Chamando método startLaunch na cena de lançamento...');
+            if (typeof this.scenes.launch.startLaunch === 'function') {
+                this.scenes.launch.startLaunch();
+                console.log('Método startLaunch chamado com sucesso');
+            } else {
+                console.error('Método startLaunch não encontrado na cena de lançamento');
+            }
             
-            console.log('Simulação de lançamento inicializada');
+            console.log('Simulação de lançamento inicializada com sucesso');
         } catch (error) {
             console.error('Erro ao iniciar simulação de lançamento:', error);
+            console.error('Stack trace:', error.stack);
         }
     }
     

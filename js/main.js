@@ -83,13 +83,43 @@ class Game {
         const animate = () => {
             requestAnimationFrame(animate);
             
-            const delta = this.gameState.clock.getDelta();
-            
-            // Atualizar as cenas ativas baseado no estado do jogo
-            this.sceneManager.update(delta);
-            
-            // Atualizar a UI se necessário
-            this.uiController.update();
+            try {
+                // Obter o tempo delta
+                if (!this.gameState || !this.gameState.clock) {
+                    console.error('GameState ou clock não inicializado');
+                    return;
+                }
+                
+                const delta = this.gameState.clock.getDelta();
+                
+                // Verificar o estado atual
+                if (this.gameState.currentState) {
+                    // Log a cada segundo (não em cada frame)
+                    if (!this._lastLogTime || Date.now() - this._lastLogTime > 1000) {
+                        console.log(`Game loop executando. Estado: ${this.gameState.currentState}`);
+                        this._lastLogTime = Date.now();
+                    }
+                } else {
+                    console.error('Estado do jogo não definido');
+                }
+                
+                // Atualizar as cenas ativas baseado no estado do jogo
+                if (this.sceneManager) {
+                    this.sceneManager.update(delta);
+                } else {
+                    console.error('SceneManager não inicializado');
+                }
+                
+                // Atualizar a UI se necessário
+                if (this.uiController) {
+                    this.uiController.update();
+                } else {
+                    console.error('UIController não inicializado');
+                }
+            } catch (error) {
+                console.error('Erro no game loop:', error);
+                console.error('Stack trace:', error.stack);
+            }
         };
         
         animate();

@@ -8,6 +8,11 @@ export class PhysicsEngine {
         this.EARTH_MASS = 5.972e24; // Massa da Terra em kg
         this.AIR_DENSITY_SEA_LEVEL = 1.225; // Densidade do ar ao nível do mar em kg/m³
         
+        // Constantes para controle manual
+        this.CONTROL_SENSITIVITY = 0.5; // Sensibilidade dos controles
+        this.MAX_ANGULAR_VELOCITY = 0.1; // Velocidade angular máxima
+        this.STABILIZATION_FACTOR = 0.9; // Fator de estabilização automática
+        
         // Estado da simulação
         this.reset();
     }
@@ -22,10 +27,37 @@ export class PhysicsEngine {
         this.thrust = 0; // N
         this.fuel = 0; // kg
         this.fuelConsumptionRate = 0; // kg/s
-        this.throttle = 1.0; // 0-1
+        this.throttle = 0; // porcentagem (0-100)
         this.gravity = 9.81; // m/s²
         
-        // Configuração dos estágios
+        // Variáveis de orientação
+        this.orientation = {
+            pitch: 0, // Ângulo de arfagem (para cima/baixo)
+            yaw: 0,   // Ângulo de guinada (esquerda/direita)
+            roll: 0   // Ângulo de rolagem
+        };
+        
+        // Velocidades angulares
+        this.angularVelocity = {
+            pitch: 0,
+            yaw: 0,
+            roll: 0
+        };
+        
+        // Vetores de direção
+        this.direction = {
+            x: 0,      // Componente lateral
+            y: 1,      // Componente vertical
+            z: 0       // Componente de profundidade
+        };
+        
+        // Posição lateral
+        this.position = {
+            x: 0,
+            z: 0
+        };
+        
+        // Estágios do foguete
         this.stages = [];
         this.currentStage = 0;
     }
@@ -197,9 +229,14 @@ export class PhysicsEngine {
                 altitude: this.altitude / 1000, // Converter para km
                 velocity: this.velocity,
                 acceleration: this.acceleration,
-                fuel: this.fuel
+                fuel: this.fuel,
+                position: this.position,
+                orientation: this.orientation
             };
         }
+        
+        // Processar inputs de controle do usuário
+        this.processControls(deltaTime);
         
         const stage = this.getCurrentStage();
         
@@ -216,6 +253,9 @@ export class PhysicsEngine {
             this.velocity += this.acceleration * deltaTime;
             this.altitude += this.velocity * deltaTime;
             
+            // Atualizar posição lateral baseada na orientação
+            this.updateLateralPosition(deltaTime);
+            
             // Verificar colisão com o solo
             if (this.altitude < 0) {
                 this.altitude = 0;
@@ -224,6 +264,9 @@ export class PhysicsEngine {
                 this.gameState.flight.status = 'crashed';
             }
         } else {
+            // Obter o throttle diretamente do gameState para controle manual
+            this.throttle = this.gameState.flight.throttle / 100;
+            
             // Calcular consumo de combustível
             const fuelUsed = stage.fuelConsumptionRate * this.throttle * deltaTime;
             
@@ -254,17 +297,23 @@ export class PhysicsEngine {
             // Calcular massa atual
             const currentMass = this.getTotalMass();
             
-            // Calcular forças
+            // Calcular forças com base na orientação
             const gravity = this.getGravityAtAltitude(this.altitude);
             const dragForce = this.calculateDrag(this.velocity, this.altitude);
-            const thrustForce = this.thrust;
+            
+            // Decompor o empuxo com base na orientação
+            const thrustVector = this.calculateThrustVector(this.thrust);
             
             // Calcular aceleração resultante (F = ma)
-            this.acceleration = (thrustForce / currentMass) - gravity - (dragForce / currentMass);
+            const verticalThrust = thrustVector.y;
+            this.acceleration = (verticalThrust / currentMass) - gravity - (dragForce / currentMass);
             
             // Atualizar velocidade e posição
             this.velocity += this.acceleration * deltaTime;
             this.altitude += this.velocity * deltaTime;
+            
+            // Atualizar posição lateral baseada na orientação e empuxo
+            this.updateLateralPosition(deltaTime, thrustVector);
             
             // Verificar colisão com o solo
             if (this.altitude < 0) {
@@ -278,43 +327,114 @@ export class PhysicsEngine {
                     time: this.gameState.flight.missionTime
                 });
             }
-            
-            // Verificar se atingiu o espaço (100km)
-            if (this.altitude >= 100000 && !this.gameState.flight.reachedSpace) {
-                this.gameState.flight.reachedSpace = true;
-                
-                this.gameState.logEvent({
-                    type: 'reached_space',
-                    altitude: this.altitude / 1000, // km
-                    time: this.gameState.flight.missionTime
-                });
-            }
-            
-            // Verificar órbita (simplificado) - se altura > 200km e velocidade > 7800 m/s
-            if (this.altitude > 200000 && this.velocity > 7800) {
-                this.gameState.flight.status = 'orbit';
-                
-                this.gameState.logEvent({
-                    type: 'orbit_achieved',
-                    altitude: this.altitude / 1000, // km
-                    velocity: this.velocity,
-                    time: this.gameState.flight.missionTime
-                });
-            }
         }
         
-        // Atualizar estado do jogo
-        this.gameState.flight.altitude = this.altitude / 1000; // Converter para km
-        this.gameState.flight.velocity = this.velocity;
-        this.gameState.flight.acceleration = this.acceleration;
-        this.gameState.flight.fuel = this.fuel;
+        // Verificar se atingiu o espaço (100km)
+        if (this.altitude >= 100000 && !this.gameState.flight.reachedSpace) {
+            this.gameState.flight.reachedSpace = true;
+            
+            this.gameState.logEvent({
+                type: 'reached_space',
+                altitude: this.altitude / 1000, // km
+                time: this.gameState.flight.missionTime
+            });
+        }
         
+        // Retornar o estado atual da simulação
         return {
             altitude: this.altitude / 1000, // Converter para km
             velocity: this.velocity,
             acceleration: this.acceleration,
-            fuel: this.fuel
+            fuel: this.fuel,
+            position: this.position,
+            orientation: this.orientation
         };
+    }
+    
+    processControls(deltaTime) {
+        // Obter os valores de controle atuais do gameState
+        const { pitch, yaw, roll } = this.gameState.flight;
+        
+        // Atualizar velocidades angulares com base nos inputs do usuário
+        this.angularVelocity.pitch += pitch * this.CONTROL_SENSITIVITY * deltaTime;
+        this.angularVelocity.yaw += yaw * this.CONTROL_SENSITIVITY * deltaTime;
+        this.angularVelocity.roll += roll * this.CONTROL_SENSITIVITY * deltaTime;
+        
+        // Limitar velocidades angulares máximas
+        this.angularVelocity.pitch = Math.max(-this.MAX_ANGULAR_VELOCITY, 
+                                         Math.min(this.MAX_ANGULAR_VELOCITY, this.angularVelocity.pitch));
+        this.angularVelocity.yaw = Math.max(-this.MAX_ANGULAR_VELOCITY, 
+                                       Math.min(this.MAX_ANGULAR_VELOCITY, this.angularVelocity.yaw));
+        this.angularVelocity.roll = Math.max(-this.MAX_ANGULAR_VELOCITY, 
+                                        Math.min(this.MAX_ANGULAR_VELOCITY, this.angularVelocity.roll));
+        
+        // Aplicar estabilização natural
+        this.angularVelocity.pitch *= this.STABILIZATION_FACTOR;
+        this.angularVelocity.yaw *= this.STABILIZATION_FACTOR;
+        this.angularVelocity.roll *= this.STABILIZATION_FACTOR;
+        
+        // Atualizar orientação
+        this.orientation.pitch += this.angularVelocity.pitch * deltaTime;
+        this.orientation.yaw += this.angularVelocity.yaw * deltaTime;
+        this.orientation.roll += this.angularVelocity.roll * deltaTime;
+        
+        // Atualizar vetor de direção
+        this.updateDirection();
+    }
+    
+    updateDirection() {
+        // Calcular o vetor de direção com base na orientação atual
+        // Começando com direção padrão (para cima)
+        let dirX = 0;
+        let dirY = 1;
+        let dirZ = 0;
+        
+        // Aplicar rotação de pitch (em torno do eixo X)
+        const pitchRad = this.orientation.pitch;
+        const tempY = dirY * Math.cos(pitchRad) - dirZ * Math.sin(pitchRad);
+        const tempZ = dirY * Math.sin(pitchRad) + dirZ * Math.cos(pitchRad);
+        dirY = tempY;
+        dirZ = tempZ;
+        
+        // Aplicar rotação de yaw (em torno do eixo Y)
+        const yawRad = this.orientation.yaw;
+        const tempX = dirX * Math.cos(yawRad) + dirZ * Math.sin(yawRad);
+        const tempZ2 = -dirX * Math.sin(yawRad) + dirZ * Math.cos(yawRad);
+        dirX = tempX;
+        dirZ = tempZ2;
+        
+        // Normalizar o vetor
+        const magnitude = Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
+        
+        this.direction.x = dirX / magnitude;
+        this.direction.y = dirY / magnitude;
+        this.direction.z = dirZ / magnitude;
+    }
+    
+    calculateThrustVector(thrust) {
+        // Calcular componentes do empuxo com base na direção atual
+        return {
+            x: thrust * this.direction.x,
+            y: thrust * this.direction.y,
+            z: thrust * this.direction.z
+        };
+    }
+    
+    updateLateralPosition(deltaTime, thrustVector = null) {
+        // Se houver um vetor de empuxo, usar suas componentes x e z
+        if (thrustVector) {
+            const lateralAccelX = thrustVector.x / this.mass;
+            const lateralAccelZ = thrustVector.z / this.mass;
+            
+            // Aplicar aceleração lateral
+            this.position.x += lateralAccelX * deltaTime * deltaTime * 0.5;
+            this.position.z += lateralAccelZ * deltaTime * deltaTime * 0.5;
+        }
+        
+        // Limitar o alcance lateral para simplificar
+        const maxRange = 1000; // metros
+        this.position.x = Math.max(-maxRange, Math.min(maxRange, this.position.x));
+        this.position.z = Math.max(-maxRange, Math.min(maxRange, this.position.z));
     }
     
     setThrottle(throttlePercent) {
